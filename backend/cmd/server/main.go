@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
@@ -20,6 +22,14 @@ func main(){
 	config.ConnectMongo()
 
 	r:=gin.Default()
+	r.Use(cors.New(cors.Config{
+	AllowOrigins:     []string{"http://localhost:3000"},
+	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+	AllowHeaders:     []string{"Origin", "Content-Type"},
+	AllowCredentials: true,
+	MaxAge:           12 * time.Hour,
+}))
+
 	routes.SetupRoutes(r)
 	r.GET("/", func(c *gin.Context){
 		c.JSON(200, gin.H{"message":"server is running"})
