@@ -13,9 +13,11 @@ export default function AddStudent() {
     phone: "",
     branch: "",
     section: "",
+    team: "",
+    volunteerDay: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -41,6 +43,8 @@ export default function AddStudent() {
           phone: "",
           branch: "",
           section: "",
+          team: "",
+          volunteerDay: "",
         });
       } else {
         setStatus({ type: "error", msg: "Failed. Duplicate Roll No or Unauthorized." });
@@ -52,15 +56,6 @@ export default function AddStudent() {
     }
   };
 
-  const fields = [
-    { name: "name", label: "Full Name", type: "text", placeholder: "e.g. John Doe", width: "full" },
-    { name: "rollNo", label: "Roll Number", type: "text", placeholder: "e.g. 21BCS001", width: "full" },
-    { name: "email", label: "Email Address", type: "email", placeholder: "john@college.edu", width: "half" },
-    { name: "phone", label: "Phone Number", type: "tel", placeholder: "9876543210", width: "half" },
-    { name: "branch", label: "Branch", type: "text", placeholder: "e.g. CSE", width: "half" },
-    { name: "section", label: "Section", type: "text", placeholder: "e.g. A", width: "half" },
-  ];
-
   return (
     <div className="w-full max-w-2xl mx-auto">
       
@@ -71,29 +66,72 @@ export default function AddStudent() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {fields.map((field) => (
-            <div 
-              key={field.name} 
-              className={field.width === "full" ? "col-span-1 md:col-span-2" : "col-span-1"}
-            >
-              <label 
-                htmlFor={field.name} 
-                className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider"
-              >
-                {field.label}
-              </label>
-              <input
-                id={field.name}
-                name={field.name}
-                type={field.type}
-                placeholder={field.placeholder}
-                value={(form as any)[field.name]}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm placeholder:text-gray-400 focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all duration-200"
-                required
-              />
-            </div>
-          ))}
+          {/* Basic Info */}
+          <div className="col-span-1 md:col-span-2">
+            <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Full Name</label>
+            <input name="name" type="text" placeholder="e.g. John Doe" value={form.name} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all" required />
+          </div>
+
+          <div>
+             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Roll Number</label>
+             <input name="rollNo" type="text" placeholder="e.g. 21BCS001" value={form.rollNo} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all" required />
+          </div>
+          
+          <div>
+             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Email Address</label>
+             <input name="email" type="email" placeholder="john@college.edu" value={form.email} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all" />
+          </div>
+
+          <div>
+             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Phone</label>
+             <input name="phone" type="tel" placeholder="9876543210" value={form.phone} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all" />
+          </div>
+
+          {/* Academic Info */}
+          <div>
+             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Branch</label>
+             <input name="branch" type="text" placeholder="e.g. CSE" value={form.branch} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all" />
+          </div>
+          
+          <div>
+             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Section</label>
+             <input name="section" type="text" placeholder="e.g. A" value={form.section} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all" />
+          </div>
+
+          {/* UPDATED: Team Dropdown */}
+          <div>
+             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Team</label>
+             <select 
+               name="team" 
+               value={form.team} 
+               onChange={handleChange} 
+               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all"
+             >
+               <option value="">Select Team</option>
+               <option value="Communication">Communication</option>
+               <option value="Logistics">Logistics</option>
+               <option value="Documentation">Documentation</option>
+             </select>
+          </div>
+
+          {/* Volunteer Day Dropdown */}
+          <div>
+             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Volunteer Day</label>
+             <select 
+               name="volunteerDay" 
+               value={form.volunteerDay} 
+               onChange={handleChange} 
+               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all"
+             >
+               <option value="">Select Day</option>
+               <option value="Monday">Monday</option>
+               <option value="Tuesday">Tuesday</option>
+               <option value="Wednesday">Wednesday</option>
+               <option value="Thursday">Thursday</option>
+               <option value="Friday">Friday</option>
+             </select>
+          </div>
+
         </div>
 
         {status.msg && (

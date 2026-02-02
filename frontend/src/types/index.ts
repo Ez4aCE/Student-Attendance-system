@@ -4,4 +4,6 @@ export interface Student{
     branch: string;
     section: string;
     attendance:number;
+    team: string;
+    volunteerDay: string;
 }
