@@ -1,24 +1,23 @@
-"use client";
+import { getStudentHistory } from "@/lib/api";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+// 1. Update the Props type to reflect that params is a Promise
+interface Props {
+  params: Promise<{ rollNo: string }>;
+}
 
-export default function StudentHistory() {
-  const params = useParams();
-  const rollNo = params.rollNo as string;
+export default async function StudentHistory({ params }: Props) {
+  // 2. Await the params before using them
+  const resolvedParams = await params;
+  const rollNo = resolvedParams.rollNo;
 
-  const [data, setData] = useState<any>(null);
+  // 3. Fetch data
+  const data = await getStudentHistory(rollNo);
 
-  useEffect(() => {
-    fetch(`http://localhost:8080/students/${rollNo}`)
-      .then((res) => res.json())
-      .then((d) => setData(d));
-  }, [rollNo]);
-
-  if (!data) {
+  // 4. Handle Not Found
+  if (!data || !data.name) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-[#8dce27] font-bold text-lg animate-pulse">Loading student profile...</p>
+      <div className="flex items-center justify-center py-20 text-red-500 font-bold">
+        Student not found (ID: {rollNo})
       </div>
     );
   }
@@ -30,7 +29,6 @@ export default function StudentHistory() {
       
       {/* Profile Card */}
       <div className="bg-white rounded-2xl shadow-lg p-8 border border-[#8dce27]/20 relative overflow-hidden">
-        {/* Decorative Circle */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#8dce27]/10 rounded-bl-full -mr-8 -mt-8"></div>
         
         <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
@@ -86,7 +84,6 @@ export default function StudentHistory() {
           </div>
         )}
       </div>
-
     </div>
   );
 }
