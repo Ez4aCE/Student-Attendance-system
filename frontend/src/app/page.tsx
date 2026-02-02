@@ -1,6 +1,7 @@
+import StudentList from "@/components/StudentList";
 import { getStudents } from "@/lib/api";
 import { Student } from "@/types";
-import StudentList from "@/components/StudentList"; // Import the new component
+
 
 export default async function Home() {
   // Fetch data on the server (FAST)

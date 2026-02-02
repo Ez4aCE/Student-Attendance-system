@@ -11,12 +11,26 @@ interface Props {
 export default function StudentList({ initialStudents }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  
+  // Filters
+  const [filterTeam, setFilterTeam] = useState(""); 
+  const [filterDay, setFilterDay] = useState("");
 
   const filteredStudents = initialStudents
-    .filter((s) => 
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      s.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((s) => {
+      // 1. Search Logic
+      const matchesSearch = 
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        s.rollNo.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // 2. Team Filter
+      const matchesTeam = filterTeam ? s.team === filterTeam : true;
+
+      // 3. Day Filter
+      const matchesDay = filterDay ? s.volunteerDay === filterDay : true;
+
+      return matchesSearch && matchesTeam && matchesDay;
+    })
     .sort((a, b) => {
       if (sortBy === "lowest") return a.attendance - b.attendance;
       if (sortBy === "highest") return b.attendance - a.attendance;
@@ -26,9 +40,11 @@ export default function StudentList({ initialStudents }: Props) {
   return (
     <div className="space-y-6">
       
-      {/* CONTROLS BAR (Search + Sort) */}
-      <div className="flex flex-col md:flex-row gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
-        <div className="flex-1 relative">
+      {/* CONTROLS BAR */}
+      <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-4">
+        
+        {/* Search */}
+        <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -36,30 +52,56 @@ export default function StudentList({ initialStudents }: Props) {
           </div>
           <input
             type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-[#8dce27] focus:border-[#8dce27] sm:text-sm"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8dce27] focus:border-[#8dce27] sm:text-sm"
             placeholder="Search by name or roll number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-bold text-gray-600 whitespace-nowrap">Sort By:</label>
+        {/* Filters Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          
+          {/* Team Filter */}
+          <select
+            value={filterTeam}
+            onChange={(e) => setFilterTeam(e.target.value)}
+            className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-[#8dce27] focus:border-[#8dce27] rounded-lg"
+          >
+            <option value="">All Teams</option>
+            <option value="Communication">Communication</option>
+            <option value="Logistics">Logistics</option>
+            <option value="Documentation">Documentation</option>
+          </select>
+
+          {/* Day Filter */}
+          <select
+            value={filterDay}
+            onChange={(e) => setFilterDay(e.target.value)}
+            className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-[#8dce27] focus:border-[#8dce27] rounded-lg"
+          >
+            <option value="">All Days</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+          </select>
+
+          {/* Sort */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-[#8dce27] focus:border-[#8dce27] sm:text-sm rounded-lg"
+            className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-[#8dce27] focus:border-[#8dce27] rounded-lg bg-white font-medium text-gray-700"
           >
-            <option value="name">Name (A-Z)</option>
-            <option value="lowest">Attendance (Lowest First)</option>
-            <option value="highest">Attendance (Highest First)</option>
+            <option value="name">Sort: Name (A-Z)</option>
+            <option value="lowest">Sort: Lowest Attendance</option>
+            <option value="highest">Sort: Highest Attendance</option>
           </select>
         </div>
-        
-        <div className="hidden md:flex items-center">
-            <span className="text-xs font-bold text-gray-500 bg-white px-3 py-2 rounded-lg border border-gray-200">
-             Result: {filteredStudents.length}
-            </span>
+
+        <div className="text-xs font-bold text-gray-500 pt-1">
+           Showing {filteredStudents.length} results
         </div>
       </div>
 
@@ -67,7 +109,6 @@ export default function StudentList({ initialStudents }: Props) {
       <div className="hidden md:block border border-[#8dce27]/30 rounded-xl overflow-hidden shadow-sm bg-white">
         <div className="max-h-[70vh] overflow-y-auto">
           <table className="min-w-full text-sm text-left">
-            {/* FIX: Removed the comment from inside 'thead' */}
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#8dce27]/20 border-b border-[#8dce27]/20 backdrop-blur-sm">
                 <th className="p-4 font-bold text-gray-700 uppercase tracking-wider text-xs">Name</th>
@@ -92,11 +133,10 @@ export default function StudentList({ initialStudents }: Props) {
                   <td className="p-4 text-gray-600">
                     {s.volunteerDay ? <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded border border-orange-100 text-xs font-medium">{s.volunteerDay}</span> : "-"}
                   </td>
+                  {/* UPDATED: Raw Number Display */}
                   <td className="p-4">
-                    <span className={`font-bold px-3 py-1 rounded-lg ${
-                      s.attendance < 50 ? 'bg-red-100 text-red-700' : 'bg-[#8dce27]/20 text-green-800'
-                    }`}>
-                      {s.attendance}%
+                    <span className="font-bold px-3 py-1 rounded-lg bg-[#8dce27]/20 text-green-800">
+                      {s.attendance}
                     </span>
                   </td>
                 </tr>
@@ -105,7 +145,7 @@ export default function StudentList({ initialStudents }: Props) {
           </table>
         </div>
         {filteredStudents.length === 0 && (
-          <div className="p-10 text-center text-gray-400">No students match your search.</div>
+          <div className="p-10 text-center text-gray-400">No students match your filters.</div>
         )}
       </div>
 
@@ -120,10 +160,9 @@ export default function StudentList({ initialStudents }: Props) {
                   {s.rollNo}
                 </Link>
               </div>
-              <span className={`font-bold text-xs px-2 py-1 rounded ${
-                 s.attendance < 50 ? 'bg-red-100 text-red-700' : 'bg-[#8dce27]/20 text-green-800'
-              }`}>
-                {s.attendance}%
+              {/* UPDATED: Raw Number Display */}
+              <span className="font-bold text-xs px-2 py-1 rounded bg-[#8dce27]/20 text-green-800">
+                {s.attendance}
               </span>
             </div>
             <hr className="border-gray-100 my-2" />
@@ -148,10 +187,9 @@ export default function StudentList({ initialStudents }: Props) {
           </div>
         ))}
          {filteredStudents.length === 0 && (
-          <div className="p-10 text-center text-gray-400 bg-white rounded-xl">No students match your search.</div>
+          <div className="p-10 text-center text-gray-400 bg-white rounded-xl">No students match your filters.</div>
         )}
       </div>
-
     </div>
   );
 }
