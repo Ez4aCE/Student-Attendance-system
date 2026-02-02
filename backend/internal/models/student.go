@@ -10,4 +10,6 @@ type Student struct{
 	Phone   string             `bson:"phone" json:"phone"`
 	Branch  string             `bson:"branch" json:"branch"`
 	Section string             `bson:"section" json:"section"`
+	Team         string             `bson:"team" json:"team"`                 
+	VolunteerDay string             `bson:"volunteerDay" json:"volunteerDay"`
 }

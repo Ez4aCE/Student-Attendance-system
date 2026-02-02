@@ -50,13 +50,16 @@ func GetStudents(c* gin.Context){
 	}
 	defer cursor.Close(ctx)
 
-	type StudentResponse struct{
-		Name            string `json:"name"`
-		RollNo          string `json:"rollNo"`
-		Branch          string `json:"branch"`
-		Section         string `json:"section"`
-		AttendanceCount int64  `json:"attendance"`
-	}
+	type StudentResponse struct {
+	Name            string `json:"name"`
+	RollNo          string `json:"rollNo"`
+	Branch          string `json:"branch"`
+	Section         string `json:"section"`
+	Team            string `json:"team"`
+	VolunteerDay    string `json:"volunteerDay"`
+	AttendanceCount int64  `json:"attendance"`
+}
+
 
 	var response []StudentResponse
 
@@ -74,6 +77,9 @@ func GetStudents(c* gin.Context){
 			Branch: student.Branch,
 			Section: student.Section,
 			AttendanceCount: count,
+			Team:         student.Team,
+			VolunteerDay: student.VolunteerDay,
+
 		})
 	}
 	c.JSON(http.StatusOK, response)
@@ -105,7 +111,8 @@ func GetStudentHistory(c *gin.Context){
 
 	defer cursor.Close(ctx)
 
-	var dates []string
+	dates := []string{}
+
 	for cursor.Next(ctx){
 		var record models.Attendance
 		cursor.Decode(&record)
@@ -113,10 +120,13 @@ func GetStudentHistory(c *gin.Context){
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"name": student.Name,
-		"rollNo":student.RollNo,
-		"branch":student.Branch,
-		"section":student.Section,
-		"attendanceDates":dates,
+		"name":            student.Name,
+		"rollNo":          student.RollNo,
+		"branch":          student.Branch,
+		"section":         student.Section,
+		"team":            student.Team,
+		"volunteerDay":    student.VolunteerDay,
+		"attendanceDates": dates,
 	})
+
 }
