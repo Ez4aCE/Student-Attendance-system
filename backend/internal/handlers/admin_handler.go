@@ -47,7 +47,7 @@ func AdminLogin( c * gin.Context){
 		return
 	}
 
-	c.SetCookie("admin",admin.Username,3600*24,"/","", false, true)
+	c.SetCookie("admin",admin.Username,3600*24,"/","", true, true)
 
 	c.JSON(http.StatusOK, gin.H{"message":"Logged in"})
 
