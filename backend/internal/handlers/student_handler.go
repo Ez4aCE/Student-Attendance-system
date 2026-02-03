@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"placecom-attendence/internal/config"
 	"placecom-attendence/internal/models"
-	
+
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -59,6 +59,7 @@ func GetStudents(c* gin.Context){
 	Team            string `json:"team"`
 	VolunteerDay    string `json:"volunteerDay"`
 	AttendanceCount int64  `json:"attendance"`
+	AttendanceDates []string `json:"attendanceDates"`
 }
 
 
@@ -66,22 +67,38 @@ func GetStudents(c* gin.Context){
 
 	for cursor.Next(ctx){
 		var student models.Student
-		cursor.Decode(&student)
+		
+		if err:= cursor.Decode(&student); err!=nil{
+			continue
+		}
 
-		count,_:=attendanceCol.CountDocuments(ctx,bson.M{
-			"studentId":student.ID,
-		})
+		attCursor, err:= attendanceCol.Find(ctx,bson.M{"studentId":student.ID})
+		var dates []string = []string{}
+
+		if err==nil{
+			for attCursor.Next(ctx){
+				var att models.Attendance
+				if err:=attCursor.Decode(&att);err==nil{
+					dates = append(dates, att.Date)
+				}
+			}
+			attCursor.Close(ctx)
+		}
+		
 
 		response=append(response, StudentResponse{
 			Name: student.Name,
 			RollNo: student.RollNo,
 			Branch: student.Branch,
 			Section: student.Section,
-			AttendanceCount: count,
 			Team:         student.Team,
 			VolunteerDay: student.VolunteerDay,
-
+			AttendanceCount: int64(len(dates)),
+			AttendanceDates: dates,
 		})
+	}
+	if response==nil{
+		response=[]StudentResponse{}
 	}
 	c.JSON(http.StatusOK, response)
 }

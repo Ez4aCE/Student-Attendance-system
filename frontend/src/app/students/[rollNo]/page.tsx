@@ -1,6 +1,7 @@
 import { getStudentHistory } from "@/lib/api";
 import Link from "next/link"; // Import Link
 
+
 interface Props {
   params: Promise<{ rollNo: string }>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { API_BASE } from "@/lib/api";
 export default function AddStudent() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error" | ""; msg: string }>({ type: "", msg: "" });
@@ -27,7 +27,7 @@ export default function AddStudent() {
     setStatus({ type: "", msg: "" });
 
     try {
-      const res = await fetch("http://localhost:8080/students", {
+      const res = await fetch(`${API_BASE}/students`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

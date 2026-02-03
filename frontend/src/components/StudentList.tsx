@@ -15,13 +15,14 @@ export default function StudentList({ initialStudents }: Props) {
   // Filters
   const [filterTeam, setFilterTeam] = useState(""); 
   const [filterDay, setFilterDay] = useState("");
+  const [filterDate, setFilterDate] = useState(""); // <--- 1. NEW STATE
 
-  const filteredStudents = initialStudents
+  const filteredStudents = (initialStudents || [])
     .filter((s) => {
       // 1. Search Logic
-      const matchesSearch = 
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        s.rollNo.toLowerCase().includes(searchTerm.toLowerCase());
+      const nameMatch = s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+      const rollMatch = s.rollNo?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+      const matchesSearch = nameMatch || rollMatch;
       
       // 2. Team Filter
       const matchesTeam = filterTeam ? s.team === filterTeam : true;
@@ -29,12 +30,18 @@ export default function StudentList({ initialStudents }: Props) {
       // 3. Day Filter
       const matchesDay = filterDay ? s.volunteerDay === filterDay : true;
 
-      return matchesSearch && matchesTeam && matchesDay;
+      // 4. Specific Date Filter (NEW LOGIC)
+      // Checks if the selected date exists in the student's attendanceDates array
+      const matchesDate = filterDate 
+        ? (s.attendanceDates || []).includes(filterDate) 
+        : true;
+
+      return matchesSearch && matchesTeam && matchesDay && matchesDate;
     })
     .sort((a, b) => {
-      if (sortBy === "lowest") return a.attendance - b.attendance;
-      if (sortBy === "highest") return b.attendance - a.attendance;
-      return a.name.localeCompare(b.name);
+      if (sortBy === "lowest") return (a.attendance || 0) - (b.attendance || 0);
+      if (sortBy === "highest") return (b.attendance || 0) - (a.attendance || 0);
+      return (a.name || "").localeCompare(b.name || "");
     });
 
   return (
@@ -43,26 +50,39 @@ export default function StudentList({ initialStudents }: Props) {
       {/* CONTROLS BAR */}
       <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-4">
         
-        {/* Search */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+        {/* Row 1: Search + Date Filter */}
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8dce27] focus:border-[#8dce27] sm:text-sm"
+              placeholder="Search by name or roll number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <input
-            type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#8dce27] focus:border-[#8dce27] sm:text-sm"
-            placeholder="Search by name or roll number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+
+          {/* NEW: Date Filter Input */}
+          <div className="w-full md:w-48">
+             <input
+               type="date"
+               value={filterDate}
+               onChange={(e) => setFilterDate(e.target.value)}
+               className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#8dce27] focus:border-[#8dce27] text-gray-600"
+               placeholder="Filter by Date"
+             />
+          </div>
         </div>
 
-        {/* Filters Grid */}
+        {/* Row 2: Dropdown Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           
-          {/* Team Filter */}
           <select
             value={filterTeam}
             onChange={(e) => setFilterTeam(e.target.value)}
@@ -74,13 +94,12 @@ export default function StudentList({ initialStudents }: Props) {
             <option value="Documentation">Documentation</option>
           </select>
 
-          {/* Day Filter */}
           <select
             value={filterDay}
             onChange={(e) => setFilterDay(e.target.value)}
             className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-[#8dce27] focus:border-[#8dce27] rounded-lg"
           >
-            <option value="">All Days</option>
+            <option value="">All Volunteer Days</option>
             <option value="Monday">Monday</option>
             <option value="Tuesday">Tuesday</option>
             <option value="Wednesday">Wednesday</option>
@@ -88,7 +107,6 @@ export default function StudentList({ initialStudents }: Props) {
             <option value="Friday">Friday</option>
           </select>
 
-          {/* Sort */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -100,8 +118,24 @@ export default function StudentList({ initialStudents }: Props) {
           </select>
         </div>
 
-        <div className="text-xs font-bold text-gray-500 pt-1">
-           Showing {filteredStudents.length} results
+        <div className="flex justify-between items-center pt-1">
+           <span className="text-xs font-bold text-gray-500">
+             Showing {filteredStudents.length} results
+           </span>
+           {/* Clear Filters Button (appears only if filters are active) */}
+           {(filterDate || filterTeam || filterDay || searchTerm) && (
+             <button 
+               onClick={() => {
+                 setFilterDate("");
+                 setFilterTeam("");
+                 setFilterDay("");
+                 setSearchTerm("");
+               }}
+               className="text-xs text-red-500 hover:text-red-700 font-bold underline"
+             >
+               Clear Filters
+             </button>
+           )}
         </div>
       </div>
 
@@ -133,7 +167,6 @@ export default function StudentList({ initialStudents }: Props) {
                   <td className="p-4 text-gray-600">
                     {s.volunteerDay ? <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded border border-orange-100 text-xs font-medium">{s.volunteerDay}</span> : "-"}
                   </td>
-                  {/* UPDATED: Raw Number Display */}
                   <td className="p-4">
                     <span className="font-bold px-3 py-1 rounded-lg bg-[#8dce27]/20 text-green-800">
                       {s.attendance}
@@ -145,7 +178,11 @@ export default function StudentList({ initialStudents }: Props) {
           </table>
         </div>
         {filteredStudents.length === 0 && (
-          <div className="p-10 text-center text-gray-400">No students match your filters.</div>
+          <div className="p-10 text-center text-gray-400">
+             {filterDate 
+               ? `No students found for date: ${filterDate}` 
+               : "No students match your filters."}
+          </div>
         )}
       </div>
 
@@ -160,7 +197,6 @@ export default function StudentList({ initialStudents }: Props) {
                   {s.rollNo}
                 </Link>
               </div>
-              {/* UPDATED: Raw Number Display */}
               <span className="font-bold text-xs px-2 py-1 rounded bg-[#8dce27]/20 text-green-800">
                 {s.attendance}
               </span>

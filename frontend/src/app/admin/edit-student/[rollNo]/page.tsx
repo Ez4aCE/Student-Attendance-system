@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { API_BASE } from "@/lib/api";
 
 export default function EditStudent() {
   const { rollNo } = useParams();
@@ -23,7 +24,7 @@ export default function EditStudent() {
 
   // 1. Fetch existing student data when page loads
   useEffect(() => {
-    fetch(`http://localhost:8080/students/${rollNo}`)
+    fetch(`${API_BASE}/students/${rollNo}`)
       .then((res) => {
         if (!res.ok) throw new Error("Student not found");
         return res.json();
@@ -56,7 +57,7 @@ export default function EditStudent() {
     setStatus({ type: "", msg: "" });
 
     try {
-      const res = await fetch(`http://localhost:8080/students/${rollNo}`, {
+      const res = await fetch(`${API_BASE}/students/${rollNo}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

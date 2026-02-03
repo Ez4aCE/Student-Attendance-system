@@ -1,163 +1,197 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { API_BASE } from "@/lib/api"; 
+import { Student } from "@/types";
 
 export default function AdminAttendance() {
-  const [students, setStudents] = useState<any[]>([]);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [loading, setLoading] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // 1. NEW: State for Date Selection (Defaults to Today)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [attendance, setAttendance] = useState<{ [key: string]: boolean }>({});
   const [status, setStatus] = useState<{ type: "success" | "error" | ""; msg: string }>({ type: "", msg: "" });
 
+  // Fetch Students
   useEffect(() => {
-    fetch("http://localhost:8080/students")
+    fetch(`${API_BASE}/students`, { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) {
-          setStudents(data);
-        } else {
-          setStudents([]);
-        }
+        const studentList = Array.isArray(data) ? data : [];
+        setStudents(studentList);
+        setFilteredStudents(studentList);
+        
+        const initialState: { [key: string]: boolean } = {};
+        studentList.forEach((s) => {
+          initialState[s.rollNo] = false;
+        });
+        setAttendance(initialState);
+        setLoading(false);
       })
-      .catch(() => setStudents([]));
+      .catch((err) => {
+        console.error("Failed to load students:", err);
+        setLoading(false);
+      });
   }, []);
 
-  const toggleSelect = (rollNo: string) => {
-    setSelected((prev) =>
-      prev.includes(rollNo)
-        ? prev.filter((r) => r !== rollNo)
-        : [...prev, rollNo]
+  // Search Logic
+  useEffect(() => {
+    const results = students.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    setFilteredStudents(results);
+  }, [searchTerm, students]);
+
+  const handleToggle = (rollNo: string) => {
+    setAttendance((prev) => ({ ...prev, [rollNo]: !prev[rollNo] }));
   };
 
-  const submitAttendance = async () => {
-    setLoading(true);
+  const handleSubmit = async () => {
+    setSubmitting(true);
     setStatus({ type: "", msg: "" });
 
+    const presentRollNos = Object.keys(attendance).filter((rollNo) => attendance[rollNo]);
+
+    if (presentRollNos.length === 0) {
+      setStatus({ type: "error", msg: "Please select at least one student." });
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:8080/attendance", {
+      const res = await fetch(`${API_BASE}/attendance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ date, rollNos: selected }),
+        body: JSON.stringify({ 
+            rollNos: presentRollNos,
+            date: selectedDate // <--- 2. Send the selected date
+        }),
       });
 
       if (res.ok) {
-        setStatus({ type: "success", msg: "Attendance marked successfully!" });
-        setSelected([]);
+        setStatus({ type: "success", msg: `Marked ${presentRollNos.length} students present for ${selectedDate}!` });
+        // setAttendance({}); // Uncomment if you want to clear selection after submit
       } else {
-        setStatus({ type: "error", msg: "Failed. Are you logged in?" });
+        setStatus({ type: "error", msg: "Failed to save attendance." });
       }
     } catch (error) {
       setStatus({ type: "error", msg: "Network error occurred." });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+         <p className="text-[#8dce27] font-bold text-lg animate-pulse">Loading class list...</p>
+      </div>
+    );
+  }
+
   return (
-    // Removed outer wrapper to fit into RootLayout
-    <div className="w-full max-w-3xl mx-auto space-y-6">
+    <div className="w-full max-w-4xl mx-auto">
       
-      {/* Header Section */}
-      <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#8dce27]/20 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      {/* Header + Submit Button */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
-            Mark Attendance
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Select students to mark them as present.
-          </p>
+          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Mark Attendance</h1>
+          <p className="text-sm text-gray-500 mt-1">Select students present for the selected date.</p>
         </div>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="w-full sm:w-auto px-8 py-3 bg-[#8dce27] hover:bg-[#7bc21e] text-gray-900 font-bold rounded-xl shadow-lg shadow-[#8dce27]/20 transition-all disabled:opacity-50"
+        >
+          {submitting ? "Saving..." : "Submit Attendance"}
+        </button>
+      </div>
+
+      {status.msg && (
+        <div className={`mb-6 p-4 rounded-xl font-bold text-center ${
+          status.type === 'success' ? 'bg-[#8dce27]/20 text-green-800' : 'bg-red-50 text-red-700'
+        }`}>
+          {status.msg}
+        </div>
+      )}
+
+      {/* 3. CONTROLS ROW: Search + Date Picker */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
         
-        <div className="w-full md:w-auto">
+        {/* Search Input */}
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full md:w-auto px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 text-sm focus:bg-white focus:border-[#3dd8ff] focus:ring-2 focus:ring-[#3dd8ff]/50 outline-none transition-all"
+            type="text"
+            className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8dce27]/50 focus:border-[#8dce27] shadow-sm transition-all"
+            placeholder="Type to search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+
+        {/* Date Input */}
+        <div>
+           <input 
+             type="date" 
+             value={selectedDate}
+             onChange={(e) => setSelectedDate(e.target.value)}
+             className="block w-full px-4 py-3 border border-gray-200 rounded-xl leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-[#8dce27]/50 focus:border-[#8dce27] shadow-sm font-medium text-gray-700"
+           />
+        </div>
       </div>
 
-      {/* Student List Card */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-[#8dce27]/20">
-        <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2">
-          {students.map((s) => {
-            const isSelected = selected.includes(s.rollNo);
-            return (
-              <div 
-                key={s.rollNo} 
-                onClick={() => toggleSelect(s.rollNo)}
-                className={`p-4 rounded-xl flex items-center justify-between cursor-pointer transition-all duration-200 border ${
-                  isSelected 
-                    ? "bg-[#8dce27]/20 border-[#8dce27] shadow-sm" 
-                    : "bg-white border-transparent hover:bg-gray-50 border-b-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    readOnly
-                    className="w-5 h-5 accent-[#8dce27] cursor-pointer"
-                  />
-                  <div>
-                    <span className={`font-bold text-sm block ${isSelected ? "text-gray-900" : "text-gray-700"}`}>
-                       {s.name}
-                    </span>
-                    <span className="text-xs font-mono text-gray-400">
-                      {s.rollNo}
-                    </span>
-                  </div>
-                </div>
-                
-                {isSelected && (
-                  <span className="text-xs font-bold text-green-800 bg-[#8dce27]/30 px-2 py-1 rounded">
-                    PRESENT
-                  </span>
-                )}
-              </div>
-            );
-          })}
-           
-           {students.length === 0 && (
-             <div className="text-center py-8 text-gray-400 text-sm">
-               No students found...
-             </div>
-           )}
-        </div>
-
-        {/* Action Footer */}
-        <div className="p-6 border-t border-gray-100 bg-gray-50/50">
-          {status.msg && (
-            <div className={`mb-4 p-3 rounded-lg text-sm font-medium text-center ${
-              status.type === 'success' ? 'bg-[#8dce27]/20 text-green-800' : 'bg-red-50 text-red-700'
-            }`}>
-              {status.msg}
-            </div>
-          )}
-
-          <button
-            onClick={submitAttendance}
-            disabled={loading}
-            className="w-full bg-[#8dce27] hover:bg-[#7bc21e] text-gray-900 font-bold py-3.5 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-2"
+      {/* Student List Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2">
+        {filteredStudents.map((student) => (
+          <div 
+            key={student.rollNo}
+            onClick={() => handleToggle(student.rollNo)}
+            className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
+              attendance[student.rollNo] 
+                ? "border-[#8dce27] bg-[#8dce27]/10" 
+                : "border-gray-100 bg-white hover:border-[#8dce27]/50"
+            }`}
           >
-            {loading ? (
-              <span className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>Submit Attendance</span>
-                {selected.length > 0 && (
-                  <span className="bg-white/40 px-2 py-0.5 rounded text-xs">
-                    {selected.length}
-                  </span>
-                )}
-              </>
-            )}
-          </button>
-        </div>
+            <div>
+              <h3 className="font-bold text-gray-800">{student.name}</h3>
+              <div className="flex gap-2 text-xs font-medium text-gray-500 mt-0.5">
+                <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{student.rollNo}</span>
+                {student.team && <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded">{student.team}</span>}
+              </div>
+            </div>
+            
+            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${
+              attendance[student.rollNo]
+                ? "bg-[#8dce27] border-[#8dce27]"
+                : "border-gray-300 group-hover:border-[#8dce27]"
+            }`}>
+              {attendance[student.rollNo] && (
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
+      
+      {filteredStudents.length === 0 && (
+         <div className="text-center py-12 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
+           {students.length === 0 ? "No students found in database." : "No matching students found."}
+         </div>
+      )}
     </div>
   );
 }

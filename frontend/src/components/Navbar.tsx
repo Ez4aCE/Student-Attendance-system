@@ -23,8 +23,7 @@ export default function Navbar() {
     // 2. Redirect to Login
     router.push("/admin/login");
 
-    // Optional: If you implement a backend logout endpoint later, call it here:
-    // fetch("http://localhost:8080/admin/logout", { method: "POST" });
+   
   };
 
   return (
