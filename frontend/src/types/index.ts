@@ -6,4 +6,5 @@ export interface Student{
     attendance:number;
     team: string;
     volunteerDay: string;
+    attendanceDates?: string[];
 }

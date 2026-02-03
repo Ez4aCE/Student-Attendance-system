@@ -2,7 +2,7 @@ import StudentList from "@/components/StudentList";
 import { getStudents } from "@/lib/api";
 import { Student } from "@/types";
 
-
+export const dynamic = "force-dynamic";
 export default async function Home() {
   // Fetch data on the server (FAST)
   const students: Student[] = await getStudents();
