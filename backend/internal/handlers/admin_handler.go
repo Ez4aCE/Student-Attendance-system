@@ -46,7 +46,7 @@ func AdminLogin( c * gin.Context){
 		c.JSON(http.StatusUnauthorized, gin.H{"error":"invalid credentials"})
 		return
 	}
-
+	c.SetSameSite(http.SameSiteNoneMode)
 	c.SetCookie("admin",admin.Username,3600*24,"/","", true, true)
 
 	c.JSON(http.StatusOK, gin.H{"message":"Logged in"})
