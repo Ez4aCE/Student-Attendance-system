@@ -19,5 +19,6 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		admin.POST("/students",handlers.AddStudent)
 		admin.POST("/attendance",handlers.MarkAttendance)
+		admin.PUT("/students/:rollNo", handlers.UpdateStudent)
 	}
 }

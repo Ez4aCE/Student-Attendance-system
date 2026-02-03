@@ -1,4 +1,5 @@
 import { getStudentHistory } from "@/lib/api";
+import Link from "next/link"; // Import Link
 
 interface Props {
   params: Promise<{ rollNo: string }>;
@@ -24,17 +25,33 @@ export default async function StudentHistory({ params }: Props) {
       
       {/* Profile Card */}
       <div className="bg-white rounded-2xl shadow-lg p-8 border border-[#8dce27]/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#8dce27]/10 rounded-bl-full -mr-8 -mt-8"></div>
+        {/* Decorative Background */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#8dce27]/10 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
         
         <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
+          {/* Avatar */}
           <div className="w-20 h-20 bg-[#3dd8ff]/20 rounded-2xl flex items-center justify-center text-[#3dd8ff] text-2xl font-bold border border-[#3dd8ff]/30 shrink-0">
             {data.name.charAt(0).toUpperCase()}
           </div>
           
           <div className="space-y-1 w-full">
-            <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
-              {data.name}
-            </h1>
+            {/* Header Row: Name + Edit Button */}
+            <div className="flex justify-between items-start">
+              <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
+                {data.name}
+              </h1>
+              
+              {/* NEW EDIT BUTTON */}
+              <Link 
+                href={`/admin/edit-student/${data.rollNo}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-[#8dce27] hover:text-white rounded-lg transition-all shadow-sm border border-gray-200 hover:border-[#8dce27]"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Edit
+              </Link>
+            </div>
             
             {/* Primary Details */}
             <div className="flex flex-wrap gap-2 text-sm font-medium mb-3">
@@ -46,7 +63,7 @@ export default async function StudentHistory({ params }: Props) {
               </span>
             </div>
 
-            {/* NEW: Team & Volunteer Day Badges */}
+            {/* Team & Volunteer Day Badges */}
             <div className="flex flex-wrap gap-2">
               {data.team && (
                 <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg border border-purple-200 text-sm font-bold flex items-center gap-1">

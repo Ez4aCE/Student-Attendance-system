@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"placecom-attendence/internal/config"
 	"placecom-attendence/internal/models"
+	
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -128,5 +129,42 @@ func GetStudentHistory(c *gin.Context){
 		"volunteerDay":    student.VolunteerDay,
 		"attendanceDates": dates,
 	})
+
+}
+
+
+func UpdateStudent(c *gin.Context){
+	var updated models.Student
+	rollNo:= c.Param("rollNo")
+
+	if err:= c.ShouldBindJSON(&updated); err!=nil{
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel:= context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	col:= config.DB.Collection("students")
+
+	update := bson.M{
+		"$set": bson.M{
+			"name": updated.Name,
+			"email": updated.Email,
+			"phone":updated.Phone,
+			"branch":updated.Branch,
+			"section": updated.Section,
+			"team":updated.Team,
+			"volunteerDay":updated.VolunteerDay,
+		},
+	}
+
+	_, err:=col.UpdateOne(ctx, bson.M{"rollNo":rollNo},update)
+
+	if err!=nil{
+		c.JSON(http.StatusInternalServerError, gin.H{"error":"Update failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message":"Student Updated"})
 
 }
